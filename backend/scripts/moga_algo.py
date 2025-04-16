@@ -2,6 +2,7 @@ import random
 import numpy as np
 import time
 from collections import defaultdict
+import concurrent.futures
 
 class MOGAScheduler:
     def __init__(self, session, Section, Subject, Teacher, Schedule):
@@ -11,11 +12,14 @@ class MOGAScheduler:
         self.Teacher = Teacher
         self.Schedule = Schedule
         
-        # Constants for the genetic algorithm
-        self.POPULATION_SIZE = 50
-        self.GENERATIONS = 100
-        self.MUTATION_RATE = 0.1
-        self.CROSSOVER_RATE = 0.8
+        # Constants for the genetic algorithm - modified for better performance
+        self.POPULATION_SIZE = 100  # Increased population size
+        self.GENERATIONS = 200  # Increased max generations
+        self.INITIAL_MUTATION_RATE = 0.2  # Higher initial mutation rate
+        self.MIN_MUTATION_RATE = 0.05
+        self.CROSSOVER_RATE = 0.9  # Increased crossover rate
+        self.ELITISM_COUNT = 5  # Keep top solutions
+        self.EARLY_STOP_GENERATIONS = 20  # Stop if no improvement after these generations
         
         # Load data from database
         self.teachers = session.query(Teacher).all()
@@ -31,18 +35,12 @@ class MOGAScheduler:
         self.teacher_subjects = self._map_teacher_subjects()
         
     def _map_teacher_subjects(self):
-        """Map teachers to their subjects based on specialization"""
+        """Map teachers to their subjects based on the subject_id relationship"""
         teacher_subjects = defaultdict(list)
         for teacher in self.teachers:
-            for subject in self.subjects:
-                if hasattr(teacher, 'specialization') and teacher.specialization == subject.name:
-                    teacher_subjects[teacher.id].append(subject.id)
+            # Add the directly assigned subject
+            teacher_subjects[teacher.id].append(teacher.subject_id)
         
-        # If a teacher has no specific subjects, assume they can teach any
-        for teacher in self.teachers:
-            if not teacher_subjects[teacher.id]:
-                teacher_subjects[teacher.id] = [subject.id for subject in self.subjects]
-                
         return teacher_subjects
     
     def _create_random_schedule(self):
@@ -118,9 +116,10 @@ class MOGAScheduler:
                 suitability += 1
         
         # Combined fitness (weighted sum, needs to be maximized)
+        # Higher penalties for conflicts to eliminate them entirely
         fitness = (
-            -10 * teacher_conflicts
-            -10 * section_conflicts
+            -50 * teacher_conflicts  # Significantly increased penalty
+            -50 * section_conflicts  # Significantly increased penalty
             -2 * load_variance
             +1 * suitability
         )
@@ -132,13 +131,28 @@ class MOGAScheduler:
             'suitability': suitability
         }
     
+    def _calculate_population_fitness(self, population):
+        """Calculate fitness for entire population with parallel processing"""
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            results = list(executor.map(self._calculate_fitness, population))
+        
+        fitnesses = [result[0] for result in results]
+        metrics_list = [result[1] for result in results]
+        return fitnesses, metrics_list
+    
     def _selection(self, population, fitnesses):
-        """Tournament selection"""
+        """Tournament selection with higher selection pressure"""
         selected = []
         
-        for _ in range(len(population)):
-            # Select 3 random individuals
-            candidates = random.sample(range(len(population)), 3)
+        # Add elites directly
+        sorted_indices = sorted(range(len(fitnesses)), key=lambda i: fitnesses[i], reverse=True)
+        elites = [population[i] for i in sorted_indices[:self.ELITISM_COUNT]]
+        selected.extend(elites)
+        
+        # Fill the rest with tournament selection
+        while len(selected) < len(population):
+            # Select 4 random individuals (increased tournament size)
+            candidates = random.sample(range(len(population)), 4)
             # Choose the one with the best fitness
             winner = candidates[0]
             for candidate in candidates:
@@ -163,20 +177,40 @@ class MOGAScheduler:
         
         return child1, child2
     
-    def _mutation(self, chromosome):
-        """Perform mutation on a chromosome"""
+    def _adaptive_mutation(self, chromosome, generation, max_generations, current_best_fitness):
+        """Adaptive mutation rate based on generation and fitness"""
+        # Decrease mutation rate over time
+        progress_factor = generation / max_generations
+        
+        # If fitness is very negative (bad solution), increase mutation rate
+        fitness_factor = 0
+        if current_best_fitness < -100:
+            fitness_factor = 0.1
+        
+        mutation_rate = self.INITIAL_MUTATION_RATE * (1 - progress_factor * 0.5) + fitness_factor
+        mutation_rate = max(mutation_rate, self.MIN_MUTATION_RATE)
+        
         for i in range(len(chromosome)):
-            if random.random() < self.MUTATION_RATE:
+            if random.random() < mutation_rate:
                 gene = chromosome[i]
                 
-                # Randomly select which attribute to mutate
-                mutation_type = random.choice(['day', 'time_slot', 'teacher_id'])
+                # Determine what to mutate based on conflicts
+                day_time_conflicts = True  # Assume there might be conflicts
+                teacher_conflicts = False
                 
-                if mutation_type == 'day':
-                    gene['day'] = random.choice(self.days)
-                elif mutation_type == 'time_slot':
-                    gene['time_slot'] = random.choice(self.time_slots)
-                else:  # teacher_id
+                # Check if this gene contributes to a conflict
+                for j in range(len(chromosome)):
+                    if i != j:
+                        if (gene['day'] == chromosome[j]['day'] and 
+                            gene['time_slot'] == chromosome[j]['time_slot']):
+                            if gene['teacher_id'] == chromosome[j]['teacher_id']:
+                                teacher_conflicts = True
+                            if gene['section_id'] == chromosome[j]['section_id']:
+                                day_time_conflicts = True
+                
+                # Targeted mutation based on conflict type
+                if teacher_conflicts:
+                    # Change teacher to resolve conflict
                     suitable_teachers = [teacher.id for teacher in self.teachers 
                                         if gene['subject_id'] in self.teacher_subjects[teacher.id]]
                     
@@ -184,6 +218,30 @@ class MOGAScheduler:
                         suitable_teachers = [teacher.id for teacher in self.teachers]
                     
                     gene['teacher_id'] = random.choice(suitable_teachers)
+                
+                elif day_time_conflicts:
+                    # Change time or day to resolve conflict
+                    if random.random() < 0.5:
+                        gene['day'] = random.choice(self.days)
+                    else:
+                        gene['time_slot'] = random.choice(self.time_slots)
+                
+                else:
+                    # Random mutation if no specific conflicts
+                    mutation_type = random.choice(['day', 'time_slot', 'teacher_id'])
+                    
+                    if mutation_type == 'day':
+                        gene['day'] = random.choice(self.days)
+                    elif mutation_type == 'time_slot':
+                        gene['time_slot'] = random.choice(self.time_slots)
+                    else:  # teacher_id
+                        suitable_teachers = [teacher.id for teacher in self.teachers 
+                                            if gene['subject_id'] in self.teacher_subjects[teacher.id]]
+                        
+                        if not suitable_teachers:
+                            suitable_teachers = [teacher.id for teacher in self.teachers]
+                        
+                        gene['teacher_id'] = random.choice(suitable_teachers)
         
         return chromosome
     
@@ -193,14 +251,18 @@ class MOGAScheduler:
         population = [self._create_random_schedule() for _ in range(self.POPULATION_SIZE)]
         
         # Evaluate initial population
-        fitnesses = [self._calculate_fitness(chromosome)[0] for chromosome in population]
+        fitnesses, metrics_list = self._calculate_population_fitness(population)
         
         best_fitness = max(fitnesses)
-        best_chromosome = population[fitnesses.index(best_fitness)]
-        best_metrics = self._calculate_fitness(best_chromosome)[1]
+        best_idx = fitnesses.index(best_fitness)
+        best_chromosome = population[best_idx]
+        best_metrics = metrics_list[best_idx]
         
         print(f"Initial best fitness: {best_fitness}")
         print(f"Metrics: {best_metrics}")
+        
+        # Track generations without improvement for early stopping
+        generations_without_improvement = 0
         
         # Evolution loop
         for generation in range(self.GENERATIONS):
@@ -210,34 +272,56 @@ class MOGAScheduler:
             # Create new population through crossover and mutation
             new_population = []
             
-            for i in range(0, len(selected), 2):
-                if i + 1 < len(selected):
-                    child1, child2 = self._crossover(selected[i], selected[i + 1])
-                    new_population.append(self._mutation(child1))
-                    new_population.append(self._mutation(child2))
-                else:
-                    new_population.append(self._mutation(selected[i]))
+            # Ensure elites are preserved
+            sorted_indices = sorted(range(len(fitnesses)), key=lambda i: fitnesses[i], reverse=True)
+            for i in range(self.ELITISM_COUNT):
+                new_population.append(population[sorted_indices[i]])
+            
+            # Add offspring through crossover and mutation
+            while len(new_population) < self.POPULATION_SIZE:
+                parent1, parent2 = random.sample(selected, 2)
+                child1, child2 = self._crossover(parent1, parent2)
+                
+                child1 = self._adaptive_mutation(child1, generation, self.GENERATIONS, best_fitness)
+                child2 = self._adaptive_mutation(child2, generation, self.GENERATIONS, best_fitness)
+                
+                new_population.append(child1)
+                if len(new_population) < self.POPULATION_SIZE:
+                    new_population.append(child2)
             
             # Ensure population size remains the same
             new_population = new_population[:self.POPULATION_SIZE]
             
             # Calculate fitness for new population
-            new_fitnesses = [self._calculate_fitness(chromosome)[0] for chromosome in new_population]
+            new_fitnesses, new_metrics_list = self._calculate_population_fitness(new_population)
             
-            # Elitism: keep the best chromosome
+            # Find the best in current generation
             curr_best_idx = new_fitnesses.index(max(new_fitnesses))
             curr_best_fitness = new_fitnesses[curr_best_idx]
             
             if curr_best_fitness > best_fitness:
                 best_fitness = curr_best_fitness
                 best_chromosome = new_population[curr_best_idx]
-                best_metrics = self._calculate_fitness(best_chromosome)[1]
+                best_metrics = new_metrics_list[curr_best_idx]
                 print(f"Generation {generation}: New best fitness: {best_fitness}")
                 print(f"Metrics: {best_metrics}")
+                generations_without_improvement = 0
+            else:
+                generations_without_improvement += 1
             
             # Update population and fitnesses for next generation
             population = new_population
             fitnesses = new_fitnesses
+            
+            # Early stopping if perfect solution found (no conflicts)
+            if best_metrics['teacher_conflicts'] == 0 and best_metrics['section_conflicts'] == 0:
+                print(f"Perfect solution found at generation {generation}! Early stopping.")
+                break
+                
+            # Early stopping if no improvement for many generations
+            if generations_without_improvement >= self.EARLY_STOP_GENERATIONS:
+                print(f"No improvement for {self.EARLY_STOP_GENERATIONS} generations. Early stopping.")
+                break
         
         print(f"Final best fitness: {best_fitness}")
         print(f"Final metrics: {best_metrics}")

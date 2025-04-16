@@ -22,6 +22,8 @@ class Section(db.Model):
             Section(name='Grade 7 - Sunflower'),
             Section(name='Grade 7 - Daffodil'),
             Section(name='Grade 7 - Orchid'),
+            Section(name='Grade 8 - Sunflower'),
+          
            
         ]
         

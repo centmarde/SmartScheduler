@@ -39,18 +39,12 @@ class AntColonyScheduler:
         self.required_schedules = self._get_required_schedules()
         
     def _map_teacher_subjects(self):
-        """Map teachers to their subjects based on specialization"""
+        """Map teachers to their subjects based on the subject_id relationship"""
         teacher_subjects = defaultdict(list)
         for teacher in self.teachers:
-            for subject in self.subjects:
-                if hasattr(teacher, 'specialization') and teacher.specialization == subject.name:
-                    teacher_subjects[teacher.id].append(subject.id)
-        
-        # If a teacher has no specific subjects, assume they can teach any
-        for teacher in self.teachers:
-            if not teacher_subjects[teacher.id]:
-                teacher_subjects[teacher.id] = [subject.id for subject in self.subjects]
-                
+            # Add the directly assigned subject
+            teacher_subjects[teacher.id].append(teacher.subject_id)
+            
         return teacher_subjects
     
     def _get_required_schedules(self):
@@ -142,7 +136,10 @@ class AntColonyScheduler:
                 for teacher_id in suitable_teachers:
                     # Get pheromone value
                     key = (section_id, subject_id, day, time_slot, teacher_id)
-                    pheromone = self.pheromones.get(key, 0.1)
+                    # Ensure the key exists in the pheromones dictionary
+                    if key not in self.pheromones:
+                        self.pheromones[key] = 0.1
+                    pheromone = self.pheromones[key]
                     
                     # Get heuristic value
                     heuristic = self._calculate_heuristic(
@@ -288,16 +285,25 @@ class AntColonyScheduler:
         # Add new pheromones
         for solution, score in zip(solutions, scores):
             for entry in solution:
-                key = (
-                    entry['section_id'], 
-                    entry['subject_id'], 
-                    entry['day'], 
-                    entry['time_slot'], 
-                    entry['teacher_id']
-                )
-                
-                # Deposit pheromone proportional to solution quality
-                self.pheromones[key] += self.Q * score
+                try:
+                    key = (
+                        entry['section_id'], 
+                        entry['subject_id'], 
+                        entry['day'], 
+                        entry['time_slot'], 
+                        entry['teacher_id']
+                    )
+                    
+                    # Ensure the key exists before updating
+                    if key not in self.pheromones:
+                        self.pheromones[key] = 0.1
+                        
+                    # Deposit pheromone proportional to solution quality
+                    self.pheromones[key] += self.Q * score
+                except (TypeError, KeyError) as e:
+                    # Skip invalid entries and log error
+                    print(f"Error updating pheromones: {e}, entry: {entry}")
+                    continue
     
     def optimize(self):
         """Run the ant colony optimization algorithm"""

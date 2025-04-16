@@ -7,7 +7,7 @@ function LandingContent() {
   const navigate = useNavigate();
 
   const goToTable = () => {
-    navigate("/table");
+    navigate("/algorithms");
   };
   
   return (
