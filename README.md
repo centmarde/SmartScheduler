@@ -97,7 +97,9 @@ Navigate to the `jupyter/` directory to access the algorithm notebooks.
 ```bash
 cd backend
 pip install -r requirements.txt
-# Additional setup instructions
+python -m venv venv
+source venv/Scripts/activate
+python app.py
 ```
 
 ### Frontend Setup
