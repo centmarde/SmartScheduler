@@ -17,6 +17,7 @@ class Subject(db.Model):
     
     # Relationship with sections (many-to-many)
     sections = db.relationship("Section", secondary=section_subject, back_populates="subjects")
+    # Note: The teacher relationship is handled via backref in the Teacher model
     
     def __repr__(self):
         return f"<Subject(name='{self.name}', code='{self.code}')>"
@@ -31,7 +32,9 @@ class Subject(db.Model):
             Subject(name='Mathematics', code='MATH'),
             Subject(name='Science', code='SCI'),
             Subject(name='English', code='ENG'),
-          
+            Subject(name='Filipino', code='FIL'),
+            Subject(name='Mapeh', code='MAPEH'),
+           
         ]
         
         session.add_all(subjects)

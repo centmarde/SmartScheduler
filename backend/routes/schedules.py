@@ -9,20 +9,161 @@ schedules_bp = Blueprint('schedules', __name__)
 
 @schedules_bp.route('/', methods=['GET'])
 def get_all_schedules():
-    """Get all schedules"""
+    """Get all schedules with related data"""
     schedules = Schedule.query.all()
     result = []
+    
     for schedule in schedules:
-        result.append({
+        schedule_data = {
             'id': schedule.id,
             'day': schedule.day,
             'time_slot': schedule.time_slot,
-            'teacher': schedule.teacher.name if schedule.teacher else None,
-            'section': schedule.section.name if schedule.section else None,
-            'subject': schedule.subject.name if schedule.subject else None
-        })
+        }
+        
+        # Include teacher if available
+        if schedule.teacher:
+            schedule_data['teacher'] = {
+                'id': schedule.teacher.id,
+                'name': schedule.teacher.name
+            }
+            
+        # Include section if available
+        if schedule.section:
+            schedule_data['section'] = {
+                'id': schedule.section.id,
+                'name': schedule.section.name
+            }
+            
+        # Include subject if available
+        if schedule.subject:
+            schedule_data['subject'] = {
+                'id': schedule.subject.id,
+                'name': schedule.subject.name,
+                'code': schedule.subject.code
+            }
+            
+        result.append(schedule_data)
+    
     return jsonify(result)
 
+@schedules_bp.route('/teacher/<int:teacher_id>', methods=['GET'])
+def get_teacher_schedule(teacher_id):
+    """Get schedule for a specific teacher"""
+    schedules = Schedule.query.filter_by(teacher_id=teacher_id).all()
+    result = []
+    
+    for schedule in schedules:
+        schedule_data = {
+            'id': schedule.id,
+            'day': schedule.day,
+            'time_slot': schedule.time_slot,
+        }
+        
+        # Include section if available
+        if schedule.section:
+            schedule_data['section'] = {
+                'id': schedule.section.id,
+                'name': schedule.section.name
+            }
+            
+        # Include subject if available
+        if schedule.subject:
+            schedule_data['subject'] = {
+                'id': schedule.subject.id,
+                'name': schedule.subject.name,
+                'code': schedule.subject.code
+            }
+            
+        result.append(schedule_data)
+    
+    return jsonify(result)
+
+@schedules_bp.route('/section/<int:section_id>', methods=['GET'])
+def get_section_schedule(section_id):
+    """Get schedule for a specific section"""
+    schedules = Schedule.query.filter_by(section_id=section_id).all()
+    result = []
+    
+    for schedule in schedules:
+        schedule_data = {
+            'id': schedule.id,
+            'day': schedule.day,
+            'time_slot': schedule.time_slot,
+        }
+        
+        # Include teacher if available
+        if schedule.teacher:
+            schedule_data['teacher'] = {
+                'id': schedule.teacher.id,
+                'name': schedule.teacher.name
+            }
+            
+        # Include subject if available
+        if schedule.subject:
+            schedule_data['subject'] = {
+                'id': schedule.subject.id,
+                'name': schedule.subject.name,
+                'code': schedule.subject.code
+            }
+            
+        result.append(schedule_data)
+    
+    return jsonify(result)
+
+@schedules_bp.route('/', methods=['POST'])
+def create_schedule():
+    """Create a new schedule entry"""
+    data = request.get_json()
+    
+    # Validate required fields
+    required_fields = ['day', 'time_slot']
+    for field in required_fields:
+        if field not in data:
+            return jsonify({'error': f'Missing required field: {field}'}), 400
+    
+    # Create new schedule
+    new_schedule = Schedule(
+        day=data['day'],
+        time_slot=data['time_slot'],
+        teacher_id=data.get('teacher_id'),
+        section_id=data.get('section_id'),
+        subject_id=data.get('subject_id')
+    )
+    
+    try:
+        db.session.add(new_schedule)
+        db.session.commit()
+        
+        # Return created schedule with related data
+        result = {
+            'id': new_schedule.id,
+            'day': new_schedule.day,
+            'time_slot': new_schedule.time_slot,
+        }
+        
+        if new_schedule.teacher:
+            result['teacher'] = {
+                'id': new_schedule.teacher.id,
+                'name': new_schedule.teacher.name
+            }
+            
+        if new_schedule.section:
+            result['section'] = {
+                'id': new_schedule.section.id,
+                'name': new_schedule.section.name
+            }
+            
+        if new_schedule.subject:
+            result['subject'] = {
+                'id': new_schedule.subject.id,
+                'name': new_schedule.subject.name,
+                'code': new_schedule.subject.code
+            }
+        
+        return jsonify(result), 201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
 
 @schedules_bp.route('/generate/moga', methods=['POST'])
 def generate_schedules():
@@ -166,7 +307,11 @@ def generate_schedules_ant_colony():
         }), 201
     except Exception as e:
         db.session.rollback()
+        import traceback
+        error_details = traceback.format_exc()
+        print(f"Ant Colony Error: {str(e)}\n{error_details}")
         return jsonify({
             'status': 'error',
-            'message': str(e)
+            'message': str(e),
+            'details': error_details if request.json and request.json.get('debug', False) else None
         }), 500

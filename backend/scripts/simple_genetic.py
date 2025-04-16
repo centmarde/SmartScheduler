@@ -30,18 +30,12 @@ class SimpleGeneticScheduler:
         self.teacher_subjects = self._map_teacher_subjects()
         
     def _map_teacher_subjects(self):
-        """Map teachers to their subjects based on specialization"""
+        """Map teachers to their subjects based on the subject_id relationship"""
         teacher_subjects = defaultdict(list)
         for teacher in self.teachers:
-            for subject in self.subjects:
-                if hasattr(teacher, 'specialization') and teacher.specialization == subject.name:
-                    teacher_subjects[teacher.id].append(subject.id)
+            # Add the directly assigned subject
+            teacher_subjects[teacher.id].append(teacher.subject_id)
         
-        # If a teacher has no specific subjects, assume they can teach any
-        for teacher in self.teachers:
-            if not teacher_subjects[teacher.id]:
-                teacher_subjects[teacher.id] = [subject.id for subject in self.subjects]
-                
         return teacher_subjects
     
     def _create_individual(self):
@@ -109,7 +103,15 @@ class SimpleGeneticScheduler:
         fitness = 1000 - (15 * teacher_conflicts + 15 * section_conflicts - 2 * suitability)
         fitness = max(1, fitness)  # Ensure positive fitness for roulette selection
         
-        return fitness
+        # Create metrics dictionary
+        metrics = {
+            'teacher_conflicts': teacher_conflicts,
+            'section_conflicts': section_conflicts,
+            'teacher_subject_suitability': suitability,
+            'fitness_score': fitness
+        }
+        
+        return fitness, metrics
     
     def _roulette_selection(self, population, fitnesses):
         """Roulette wheel selection"""
@@ -178,7 +180,7 @@ class SimpleGeneticScheduler:
         population = [self._create_individual() for _ in range(self.POPULATION_SIZE)]
         
         # Evaluate initial population
-        fitnesses = [self._calculate_fitness(individual) for individual in population]
+        fitnesses = [self._calculate_fitness(individual)[0] for individual in population]
         
         # Find best individual from initial population
         best_fitness = max(fitnesses)
@@ -206,7 +208,7 @@ class SimpleGeneticScheduler:
             new_population = new_population[:self.POPULATION_SIZE]
             
             # Evaluate new population
-            fitnesses = [self._calculate_fitness(individual) for individual in new_population]
+            fitnesses = [self._calculate_fitness(individual)[0] for individual in new_population]
             
             # Find the best individual
             current_best_fitness = max(fitnesses)
