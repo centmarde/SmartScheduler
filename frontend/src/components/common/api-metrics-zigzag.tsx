@@ -38,7 +38,7 @@ export default function ApiMetricsZigzag({ metrics, executionTime, count, status
       icon: <BarChart2 className="h-4 w-4" /> 
     },
     { 
-      name: "Section Conflicts", 
+      name: "Avoided Section Conflicts", 
       value: metrics?.section_conflicts !== undefined ? metrics.section_conflicts : 0, 
       icon: <AlertTriangle className="h-4 w-4" /> 
     },
@@ -48,7 +48,7 @@ export default function ApiMetricsZigzag({ metrics, executionTime, count, status
       icon: <Award className="h-4 w-4" /> 
     },
     { 
-      name: "Teacher Conflicts", 
+      name: "Possible Conflicts", 
       value: metrics?.teacher_conflicts !== undefined ? metrics.teacher_conflicts : 0, 
       icon: <Users className="h-4 w-4" /> 
     },
