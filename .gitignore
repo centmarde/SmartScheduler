@@ -16,3 +16,4 @@ backend/routes/__pycache__/teachers.cpython-310.pyc
 backend/scripts/__pycache__/ant_colony.cpython-310.pyc
 backend/scripts/__pycache__/hill_climbing.cpython-310.pyc
 backend/scripts/__pycache__/moga_algo.cpython-310.pyc
+backend/models/__pycache__/sections.cpython-310.pyc
