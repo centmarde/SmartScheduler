@@ -8,6 +8,7 @@ A powerful scheduling application built with modern web technologies.
 ![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)
 ![Flask](https://img.shields.io/badge/Flask-000000?style=for-the-badge&logo=flask&logoColor=white)
 ![SQLAlchemy](https://img.shields.io/badge/SQLAlchemy-D71F00?style=for-the-badge&logo=python&logoColor=white)
+![Jupyter](https://img.shields.io/badge/Jupyter-F37626?style=for-the-badge&logo=jupyter&logoColor=white)
 
 ### Frontend
 ![React](https://img.shields.io/badge/React-61DAFB?style=for-the-badge&logo=react&logoColor=black)
@@ -23,6 +24,10 @@ A powerful scheduling application built with modern web technologies.
 ![Multi-Objective GA](https://img.shields.io/badge/MOGA-FF6B6B?style=for-the-badge&logo=evolve&logoColor=white)
 ![Hill Climbing](https://img.shields.io/badge/Hill_Climbing-009639?style=for-the-badge&logo=mountain&logoColor=white)
 
+### Data Visualization
+![Matplotlib](https://img.shields.io/badge/Matplotlib-11557C?style=for-the-badge&logo=python&logoColor=white)
+![NumPy](https://img.shields.io/badge/NumPy-013243?style=for-the-badge&logo=numpy&logoColor=white)
+
 ## Dependencies
 
 ### Backend Dependencies
@@ -31,6 +36,10 @@ A powerful scheduling application built with modern web technologies.
 - **Flask-SQLAlchemy (3.1.1)**: Adds SQLAlchemy support to Flask application.
 - **Flask-Migrate (4.0.5)**: Handles SQLAlchemy database migrations for Flask.
 - **Flask-Cors (4.0.0)**: Handles Cross-Origin Resource Sharing (CORS).
+- **Jupyter Notebook**: Interactive computing environment for data analysis and visualization.
+- **Matplotlib**: Comprehensive library for creating static, animated, and interactive visualizations.
+- **Pandas**: Data analysis and manipulation library.
+- **NumPy**: Library for numerical computing with Python.
 
 ### Frontend Dependencies
 - **React (19.0.0)**: JavaScript library for building user interfaces.
@@ -56,6 +65,31 @@ The application uses several advanced optimization algorithms to generate effici
 - **Multi-Objective Genetic Algorithm (MOGA)**: Evolves solutions using crossover and mutation while optimizing for multiple competing objectives.
 - **Simple Genetic Algorithm**: A streamlined genetic approach focused on quick convergence to good solutions.
 - **Hill Climbing**: A local search algorithm that continuously moves to neighboring states to find better solutions.
+
+## Data Analysis and Visualization
+
+The backend utilizes Jupyter notebooks for algorithm development, testing, and visualization:
+
+- **Algorithm Prototyping**: Jupyter notebooks provide an interactive environment for developing and testing scheduling algorithms.
+- **Performance Analysis**: Visualize algorithm performance metrics including convergence rates and solution quality.
+- **Schedule Visualization**: Generate visual representations of created schedules for easier interpretation.
+- **Comparative Analysis**: Compare different algorithm approaches and parameter configurations to identify optimal solutions.
+
+Jupyter notebooks are located in the `backend/jupyter/` directory and include:
+- `ant_colony.ipynb`: Implementation and visualization of the Ant Colony Optimization algorithm
+- Additional algorithm notebooks for other optimization approaches
+
+### Using Jupyter Notebooks
+
+To run the Jupyter notebooks:
+
+```bash
+cd backend
+pip install jupyter matplotlib pandas numpy
+jupyter notebook
+```
+
+Navigate to the `jupyter/` directory to access the algorithm notebooks.
 
 ## Getting Started
 
