@@ -14,6 +14,8 @@ A powerful scheduling application built with modern web technologies.
 ![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
 ![Vite](https://img.shields.io/badge/Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white)
 ![TailwindCSS](https://img.shields.io/badge/Tailwind_CSS-06B6D4?style=for-the-badge&logo=tailwind-css&logoColor=white)
+![Zustand](https://img.shields.io/badge/Zustand-4B4B77?style=for-the-badge&logo=zustand&logoColor=white)
+![Recharts](https://img.shields.io/badge/Recharts-22B5BF?style=for-the-badge&logo=recharts&logoColor=white)
 
 ### Algorithms
 ![Ant Colony Optimization](https://img.shields.io/badge/Ant_Colony-4B275F?style=for-the-badge&logo=antdesign&logoColor=white)
@@ -37,8 +39,14 @@ A powerful scheduling application built with modern web technologies.
 - **TypeScript (5.7.2)**: Strongly typed programming language.
 - **Vite (6.2.0)**: Next generation frontend tooling.
 - **TailwindCSS (4.1.4)**: Utility-first CSS framework.
+- **Zustand (5.0.3)**: State management solution using simplified flux principles.
+- **Axios (1.8.4)**: Promise-based HTTP client for the browser and Node.js.
+- **Recharts (2.15.2)**: Redefined chart library built with React and D3.
 - **Lucide React (0.488.0)**: Icon library for React applications.
 - **Radix UI (1.2.0)**: Unstyled, accessible UI component library.
+- **Class Variance Authority (0.7.1)**: Utility for creating consistent component variants.
+- **Tailwind Merge (3.2.0)**: Utility for merging Tailwind CSS classes.
+- **TW Animate CSS (1.2.5)**: Animation library for Tailwind CSS.
 
 ## Optimization Algorithms
 
@@ -64,12 +72,6 @@ cd frontend
 npm install
 npm run dev
 ```
-
-## Features
-
-- Feature 1
-- Feature 2
-- Feature 3
 
 ## License
 
