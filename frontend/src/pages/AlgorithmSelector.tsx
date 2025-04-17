@@ -6,6 +6,9 @@ import DefaultLayout from "@/layouts/default"
 import { useScheduleStore, Algorithm } from "@/stores/models"
 import { useNavigate } from "react-router-dom"
 import { useTheme } from "@/theme/theme"
+import ApiTester from "@/components/common/tester"
+import ApiDocumentation from "@/components/common/documentation"
+import axios from "axios"
 
 export default function AlgorithmSelector() {
   const [selectedAlgorithmId, setSelectedAlgorithmId] = useState<string | null>(null)
@@ -82,8 +85,34 @@ export default function AlgorithmSelector() {
 
   return (
     <DefaultLayout>
-      <div className="container mx-auto py-8 px-4">
-        <h1 className="text-2xl font-bold mb-6" style={{ color: theme.colors.darkGray }}>Select an Algorithm</h1>
+      <div className="container-fluid mx-auto py-8 px-4">
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-2xl font-bold" style={{ color: theme.colors.darkGray }}>Select an Algorithm</h1>
+          
+          <div className="flex items-center gap-4">
+            <ApiTester />
+            <Button 
+              onClick={handleContinue} 
+              disabled={!selectedAlgorithmId || isLoading} 
+              className="flex items-center gap-2"
+              style={{
+                ...theme.components.button.primary.base,
+                ...(!selectedAlgorithmId || isLoading ? { opacity: 0.6, cursor: 'not-allowed' } : {})
+              }}
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" /> 
+                  Processing...
+                </>
+              ) : (
+                <>
+                  Continue <ArrowRight className="h-4 w-4" />
+                </>
+              )}
+            </Button>
+          </div>
+        </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {algorithms.map((algorithm) => (
@@ -125,27 +154,8 @@ export default function AlgorithmSelector() {
           ))}
         </div>
 
-        <div className="mt-8 flex justify-end">
-          <Button 
-            onClick={handleContinue} 
-            disabled={!selectedAlgorithmId || isLoading} 
-            className="flex items-center gap-2"
-            style={{
-              ...theme.components.button.primary.base,
-              ...(!selectedAlgorithmId || isLoading ? { opacity: 0.6, cursor: 'not-allowed' } : {})
-            }}
-          >
-            {isLoading ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" /> 
-                Processing...
-              </>
-            ) : (
-              <>
-                Continue <ArrowRight className="h-4 w-4" />
-              </>
-            )}
-          </Button>
+        <div className="my-8">
+          <ApiDocumentation />
         </div>
       </div>
     </DefaultLayout>

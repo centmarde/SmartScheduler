@@ -12,12 +12,13 @@ load_dotenv()
 # Initialize Flask app
 app = Flask(__name__)
 # Configure CORS with specific options
-CORS(app, resources={r"/*": {
-    "origins": ["http://localhost:5173", "http://127.0.0.1:5173"],  # Vite default dev server
-    "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    "allow_headers": ["Content-Type", "Authorization", "X-Requested-With"],
-    "supports_credentials": True
-}})
+CORS(
+    app,
+    origins=["*"],
+    methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    allow_headers=["Content-Type", "Authorization", "X-Requested-With"],
+    supports_credentials=True
+)
 
 # Get the absolute path of the directory containing this script
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))

@@ -6,9 +6,18 @@ export interface ScheduleItem {
   id: number;
   day: string;
   time_slot: string;
+  teacher_id: number;  // Added to match the model
+  section_id: number;  // Added to match the model
+  subject_id: number;  // Added to match the model
   teacher?: {
     id: number;
     name: string;
+    subject_id?: number; // Added to match Teacher model
+    subject?: {
+      id: number;
+      name: string;
+      code: string;
+    };
   };
   section?: {
     id: number;
@@ -18,6 +27,7 @@ export interface ScheduleItem {
     id: number;
     name: string;
     code: string;
+    description?: string; // Added to match Subject model
   };
 }
 
