@@ -8,7 +8,7 @@ import { useNavigate } from "react-router-dom"
 import { useTheme } from "@/theme/theme"
 import ApiTester from "@/components/common/tester"
 import ApiDocumentation from "@/components/common/documentation"
-import axios from "axios"
+
 
 export default function AlgorithmSelector() {
   const [selectedAlgorithmId, setSelectedAlgorithmId] = useState<string | null>(null)
@@ -72,7 +72,8 @@ export default function AlgorithmSelector() {
       try {
         // Generate schedules using the selected algorithm
         await generateSchedules()
-        // Navigate to the next page only after schedules are generated
+        
+        // Navigate to the next page after generating schedules
         navigate("/schedule-generation")
       } catch (error) {
         console.error("Failed to generate schedules:", error)
