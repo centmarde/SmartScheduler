@@ -9,18 +9,29 @@ import { Alert } from "@/components/common/alert"
 import { Button } from "@/components/ui/button"
 import { useScheduleStore } from "@/stores/models"
 import ApiMetricsZigzag from "@/components/common/api-metrics-zigzag"
+import SpeedDialog from "@/components/common/speed"
 
 export default function TeacherSchedule() {
   const theme = useTheme();
   const { formattedSchedule, loading, error, fetchAllData, scheduleItems } = useResultsStore();
   const [showDebug, setShowDebug] = useState(false);
   const [showApiResponse, setShowApiResponse] = useState(false);
+  const [showSpeedDialog, setShowSpeedDialog] = useState(false);
+  const [executionTime, setExecutionTime] = useState(0);
   const generationResult = useScheduleStore(state => state.generationResult);
 
   // Fetch all data on component mount
   useEffect(() => {
     fetchAllData();
   }, [fetchAllData]);
+
+  // Show speed dialog if we have execution time data
+  useEffect(() => {
+    if (generationResult?.data?.execution_time_seconds) {
+      setExecutionTime(generationResult.data.execution_time_seconds);
+      setShowSpeedDialog(true);
+    }
+  }, [generationResult]);
 
   // Time slots and days (used for rendering the table)
   const timeSlots = [
@@ -187,6 +198,13 @@ export default function TeacherSchedule() {
           </p>
         </CardFooter>
       </div>
+      
+      {/* Speed Dialog */}
+      <SpeedDialog 
+        executionTime={executionTime}
+        isOpen={showSpeedDialog}
+        onClose={() => setShowSpeedDialog(false)}
+      />
     </DefaultLayout>
   )
 }
