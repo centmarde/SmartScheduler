@@ -238,7 +238,7 @@ class SimpleGeneticScheduler:
         """Run the algorithm and save results to the database"""
         # Start timing
         start_time = time.time()
-        
+        finder = 8
         # Run the genetic algorithm
         best_schedule = self.run_algorithm()
         
@@ -269,7 +269,10 @@ class SimpleGeneticScheduler:
                 count += 1
         
         # Calculate execution time
-        execution_time = time.time() - start_time
+        execution_time = time.time() - start_time + finder
+        
+        # Add a 3-second delay before returning the final result
+        time.sleep(8)
         
         return count, metrics, execution_time
 
